@@ -3,9 +3,8 @@ class Player
   class EndTurn < StandardError; end
 
   SHOOT_DISTANCE = 3
-  VERY_LOW_HP = 15
-
-  attr_reader :warrior, :prev_health, :current_direction
+  VERY_LOW_HP = 10
+  ENOUGH_HEALTH = 10
 
   def play_turn(warrior)
     @warrior = warrior
@@ -16,21 +15,23 @@ class Player
     begin
       tactical_retreat
       look
-      rescue_captive!
       change_direction_if_needed!
-      kill_em_all!
+      look
+      rescue_captive!
+      go!
     rescue EndTurn
     end
 
     @prev_health = warrior.health
   end
 
+  private
+
+  attr_reader :warrior, :prev_health, :current_direction
+
   def look
-    enemy_disatance = danger(current_direction)
-    if enemy_disatance
-      if enemy_disatance <= SHOOT_DISTANCE
-        shoot!
-      end
+    if enemy_disatance = danger(current_direction)
+      shoot! if enemy_disatance <= SHOOT_DISTANCE
     end
   end
 
@@ -58,7 +59,7 @@ class Player
   end
 
   def captive_present?(env)
-    env.find { |space| space.wall? }
+    env.find { |space| space.captive? }
   end
 
   def everything_discovered?
@@ -105,7 +106,6 @@ class Player
   def stop_retreat
     change_direction
     @dangerous_direction = nil
-
   end
 
   def tactical_retreat
@@ -114,16 +114,14 @@ class Player
         stop_retreat
       else
         walk! if under_attack?
-
         rest_if_needed!
-
         stop_retreat
       end
     end
 
     return if no_escape?(opposite_direction)
 
-    if very_low_health? && (!danger(opposite_direction))
+    if very_low_health? && !danger(opposite_direction)
       do_retreat
     end
   end
@@ -169,7 +167,6 @@ class Player
     elsif feel.stairs?
       if !@all_captives_rescued
         change_direction
-        walk!
       end
     end
   end
@@ -178,12 +175,10 @@ class Player
     warrior.feel(current_direction)
   end
 
-  def kill_em_all!
+  def go!
     if feel.empty?
       rest_if_needed!
       walk!
-    else
-      attack!
     end
   end
 
@@ -192,7 +187,7 @@ class Player
   end
 
   def rest_if_needed!
-    return if (warrior.health > 18 || under_attack?)
+    return if (warrior.health > ENOUGH_HEALTH || under_attack?)
     rest!
   end
 
