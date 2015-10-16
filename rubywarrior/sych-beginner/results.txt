@@ -1,0 +1,12 @@
+Total Score: 509 + 95 = 604
+Your average grade for this tower is: A
+
+  Level 1: S
+  Level 2: A
+  Level 3: S
+  Level 4: S
+  Level 5: A
+  Level 6: A
+  Level 7: A
+  Level 8: S
+  Level 9: A
