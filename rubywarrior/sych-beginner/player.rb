@@ -2,6 +2,8 @@ class Player
 
   class EndTurn < StandardError; end
 
+  SHOOT_DISTANCE = 3
+
   attr_reader :warrior, :prev_health, :current_direction, :dangerous_direction
 
   def play_turn(warrior)
@@ -11,9 +13,8 @@ class Player
     @prev_health ||= warrior.health
 
     begin
-      # p prev_health, current_direction, dangerous_direction
-
       tactical_retreat
+      shoot_enemies
       rescue_captive!
       change_direction_if_needed!
       kill_em_all!
@@ -23,12 +24,34 @@ class Player
     @prev_health = warrior.health
   end
 
+  def shoot_enemies
+    enemy_disatance = danger
+    if enemy_disatance
+      if enemy_disatance <= SHOOT_DISTANCE
+        shoot!
+      end
+    end
+  end
+
+  def shoot!
+    warrior.shoot! and raise EndTurn
+  end
+
   def very_low_health?
-    warrior.health < 12
+    warrior.health < 20
   end
 
   def doing_retreat?
     @dangerous_direction
+  end
+
+  def danger
+    env = warrior.look(current_direction)
+    env.each_with_index do |space, index|
+      return false if space.captive?
+      return index + 1 if space.enemy?
+    end
+    false
   end
 
   def tactical_retreat
