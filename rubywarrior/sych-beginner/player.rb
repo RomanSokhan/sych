@@ -7,17 +7,25 @@ class Player
   def play_turn(warrior)
     @warrior = warrior
 
-    @current_direction = :backward
+    @current_direction ||= :backward
     @prev_health ||= warrior.health
 
     begin
-      change_direction_if_needed!
       rescue_captive!
+      change_direction_if_needed!
       kill_em_all!
     rescue EndTurn
     end
 
     @prev_health = warrior.health
+  end
+
+  def change_direction
+    @current_direction = opposite_direction
+  end
+
+  def opposite_direction
+    current_direction == :backward ? :forward : :backward
   end
 
   def walk!
@@ -38,11 +46,8 @@ class Player
 
   def change_direction_if_needed!
     if warrior.feel(current_direction).wall?
-      if current_direction == :backward
-        @current_direction == :forward
-      else
-        @current_direction == :backward
-      end
+      p "wall: #{ warrior.feel(current_direction).wall? }"
+      change_direction
     end
   end
 
@@ -65,7 +70,7 @@ class Player
   end
 
   def rescue_captive!
-    if warrior.feel.captive?
+    if warrior.feel(current_direction).captive?
       rescue!
     end
   end
