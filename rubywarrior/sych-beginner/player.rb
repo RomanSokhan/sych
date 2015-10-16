@@ -77,13 +77,17 @@ class Player
   end
 
   def change_direction_if_needed!
-    if warrior.feel(current_direction).wall?
+    if feel.wall?
       change_direction
     end
   end
 
+  def feel
+    warrior.feel(current_direction)
+  end
+
   def kill_em_all!
-    if warrior.feel.empty?
+    if feel.empty?
       rest_if_needed!
       walk!
     else
@@ -101,7 +105,7 @@ class Player
   end
 
   def rescue_captive!
-    if warrior.feel(current_direction).captive?
+    if feel.captive?
       rescue!
     end
   end
