@@ -3,6 +3,7 @@ class Player
   class EndTurn < StandardError; end
 
   SHOOT_DISTANCE = 3
+  VERY_LOW_HP = 15
 
   attr_reader :warrior, :prev_health, :current_direction
 
@@ -10,7 +11,6 @@ class Player
     @warrior = warrior
 
     @current_direction ||= :backward
-    # @all_captives_rescued = false
     @prev_health ||= warrior.health
 
     begin
@@ -71,6 +71,11 @@ class Player
 
   def all_captives_rescued?(env)
     @all_captives_rescued = @everything_discovered && no_captives_left?(env)
+    if @all_captives_rescued
+      if !env.find{ |space| space.stairs? }
+        change_direction
+      end
+    end
   end
 
   def shoot!
@@ -78,7 +83,7 @@ class Player
   end
 
   def very_low_health?
-    warrior.health < 15
+    warrior.health < VERY_LOW_HP
   end
 
   def doing_retreat?
@@ -97,20 +102,36 @@ class Player
     false
   end
 
+  def stop_retreat
+    change_direction
+    @dangerous_direction = nil
+
+  end
+
   def tactical_retreat
     if doing_retreat?
-      walk! if under_attack?
+      if no_escape?(current_direction)
+        stop_retreat
+      else
+        walk! if under_attack?
 
-      rest_if_needed!
+        rest_if_needed!
 
-      change_direction
-      @dangerous_direction = nil
+        stop_retreat
+      end
     end
 
-    if very_low_health? && !danger(opposite_direction)
+    return if no_escape?(opposite_direction)
+
+    if very_low_health? && (!danger(opposite_direction))
       do_retreat
-      walk!
     end
+  end
+
+  def no_escape?(direction)
+    env = warrior.look(direction)
+    next_space = env.first
+    next_space.wall? || next_space.enemy?
   end
 
   def do_retreat
